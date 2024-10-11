@@ -4,9 +4,23 @@ import time
 import threading
 from plyer import notification
 
+# タイマー停止フラグ
+stop_flag = False
+
 # タイマー処理の関数
 def start_timer():
+    global stop_flag
+    stop_flag = False
+    
     try:
+        # 空欄に自動で"00"を入力
+        if not entry_hours.get():
+            entry_hours.insert(0, "00")
+        if not entry_minutes.get():
+            entry_minutes.insert(0, "00")
+        if not entry_seconds.get():
+            entry_seconds.insert(0, "00")
+
         # ユーザー入力を取得して秒に変換
         hours = int(entry_hours.get())
         minutes = int(entry_minutes.get())
@@ -20,6 +34,9 @@ def start_timer():
 
         # カウントダウンを開始
         while total_seconds > 0:
+            if stop_flag:  # 停止フラグが立っている場合はループを終了
+                return
+            
             time.sleep(1)
             total_seconds -= 1
 
@@ -57,6 +74,12 @@ def clear_notification():
     btn_start.config(state="normal")  # 開始ボタンを再度有効化
     notification_active = False  # 通知を消す
 
+# タイマーを停止する関数
+def stop_timer():
+    global stop_flag
+    stop_flag = True  # 停止フラグをTrueにする
+    btn_start.config(state="normal")  # 再度開始ボタンを押せるようにする
+
 # タイマーを別スレッドで実行
 def start_thread():
     btn_start.config(state="disabled")  # 開始ボタンを無効化
@@ -74,20 +97,25 @@ notification_active = False  # 通知がアクティブかどうかを管理
 frame = tk.Frame(root)
 frame.pack(pady=20)
 
-label_hours = tk.Label(frame, text="時:")
-label_hours.grid(row=0, column=0)
 entry_hours = tk.Entry(frame, width=5)
-entry_hours.grid(row=0, column=1)
+entry_hours.grid(row=0, column=0)
+label_hours = tk.Label(frame, text="時")
+label_hours.grid(row=0, column=1)
 
-label_minutes = tk.Label(frame, text="分:")
-label_minutes.grid(row=0, column=2)
 entry_minutes = tk.Entry(frame, width=5)
-entry_minutes.grid(row=0, column=3)
+entry_minutes.grid(row=0, column=2)
+label_minutes = tk.Label(frame, text="分")
+label_minutes.grid(row=0, column=3)
 
-label_seconds = tk.Label(frame, text="秒:")
-label_seconds.grid(row=0, column=4)
 entry_seconds = tk.Entry(frame, width=5)
-entry_seconds.grid(row=0, column=5)
+entry_seconds.grid(row=0, column=4)
+label_seconds = tk.Label(frame, text="秒")
+label_seconds.grid(row=0, column=5)
+
+# アプリ起動時に"00"をセット
+entry_hours.insert(0, "00")
+entry_minutes.insert(0, "00")
+entry_seconds.insert(0, "00")
 
 # タイマー表示ラベル
 label_timer = tk.Label(root, text="00:00:00", font=("Helvetica", 48))
@@ -96,6 +124,10 @@ label_timer.pack(pady=20)
 # 開始ボタン
 btn_start = tk.Button(root, text="開始", command=start_thread)
 btn_start.pack(pady=10)
+
+# 停止ボタン
+btn_stop = tk.Button(root, text="停止", command=stop_timer)
+btn_stop.pack(pady=10)
 
 # 通知を消すボタン
 btn_clear_notification = tk.Button(root, text="通知を消す", command=clear_notification, state="disabled")
